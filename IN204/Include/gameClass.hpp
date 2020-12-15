@@ -10,11 +10,6 @@ enum color {Nan, red, green, bleue, yellow, pink, purple};
 enum type {I, O, T, L, J, Z, S};
 enum direction {Left, Right};
 
-class Case
-{
-	bool filled;
-	color case_color;
-};
 
 class Piece
 {
