@@ -45,6 +45,7 @@
 			<Add directory="C:/SFML-2.5.1/lib" />
 		</Linker>
 		<Unit filename="Include/gameClass.hpp" />
+		<Unit filename="Sources/gameClass.cpp" />
 		<Unit filename="Sources/main.cpp" />
 		<Extensions />
 	</Project>
