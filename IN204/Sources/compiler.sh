@@ -1,3 +1,4 @@
-g++ -c main.cpp
-g++ main.o -o bin/test -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lsfml-network
-./bin/test
+#g++ main.cpp gameClass.cpp -o bin/main.exe -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lsfml-network
+g++ sockets.cpp -o bin/sockets.exe -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lsfml-network
+#./bin/main.exe
+./bin/sockets.exe
