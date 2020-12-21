@@ -1,9 +1,10 @@
 # depslib dependency file v1.0
-1607980787 source:g:\documents\github\in204-projet\in204\sources\main.cpp
+1608571421 source:g:\documents\github\in204-projet\in204\sources\main.cpp
 	<cstdio>
 	<cstdlib>
 	<iostream>
 	<SFML/Graphics.hpp>
+	"../Include/gameClass.hpp"
 
 1525808418 c:\sfml-2.5.1\include\sfml\graphics.hpp
 	<SFML/Window.hpp>
@@ -413,4 +414,20 @@
 	<SFML/Graphics/PrimitiveType.hpp>
 	<SFML/Graphics/Drawable.hpp>
 	<SFML/Window/GlResource.hpp>
+
+1608571386 source:g:\documents\github\in204-projet\in204\sources\gameclass.cpp
+	<iostream>
+	"../include/gameClass.hpp"
+	<vector>
+	<math.h>
+
+1608480974 g:\documents\github\in204-projet\in204\include\gameclass.hpp
+	<iostream>
+	<vector>
+	<SFML/Graphics.hpp>
+
+1608481084 g:\documents\github\in204-projet\in204\sources\gameclass.cpp
+	<iostream>
+	"../include/gameClass.hpp"
+	<vector>
 
