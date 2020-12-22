@@ -287,15 +287,14 @@ void Board::continuer ()
     int y_avant = current_piece->pos_premiere_case[1];
     enum type Tavant = current_piece->piece_type;
     bool est_tombee = current_piece->move (Down);
-    std::cout << current_piece->pos_premiere_case[0] <<"; " << current_piece->pos_premiere_case[1] << std::endl;
+    //std::cout << current_piece->pos_premiere_case[0] <<"; " << current_piece->pos_premiere_case[1] << std::endl;
     if (est_tombee == false && y_avant == correspondances_forme_position[Tavant])
     {
         board_over = true;
         Partie->stop_game (nr_joueur);
         std::cout<< "joueur " <<  nr_joueur << " a fini prmier ! : " << current_piece->pos_premiere_case[0] <<std::endl;
     }
-    executer_commandes ();
-    cout<< "Etape"<<  std::endl;
+    //cout<< "Etape"<<  std::endl;
 }
 
 void Board::change_piece ()

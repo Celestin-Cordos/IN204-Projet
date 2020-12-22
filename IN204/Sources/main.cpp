@@ -29,14 +29,16 @@ int main()
     sf::RenderWindow window(sf::VideoMode(WIDTH*STEP, STEP*HEIGHT), "Tetris");
     window.setPosition (sf::Vector2i(0, 0));
     window.setFramerateLimit (60);
-    std::list <enum commandes> commandes_attente; // inutile pour le moment car on sait quel monde appeler
+    std::list <enum commandes> commandes_attente;
+    enum commandes current;
+    enum commandes previous = pause_commande;
 
     auto Monde = MaPartie.Jeux[0]; // un pointeur, donc
     int i = 0;
     while (window.isOpen())
     {
         i++;
-        std::cout << "Frame"<< std::endl;
+        //std::cout << "Frame"<< std::endl;
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -45,12 +47,14 @@ int main()
         }
         // avancement
         //std::cout << i <<"; "<< TIME_STEP << std::endl;
+        Monde->executer_commandes ();
         if (i%TIME_STEP == 0)
         {
             MaPartie.continuer ();
         }
+
         //enregistrement des commandes
-        enum commandes current;
+
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
         {
              current = move_right;
@@ -75,22 +79,33 @@ int main()
         {
             current = pause_commande;
         }
-        commandes_attente.push_back (current);
 
-        if (current == pause_commande)// on envoie ce qu'il y a avant
+
+        //std::cout << "mouvement : " << current <<", " << previous <<std::endl;
+        if (current!=previous)
         {
-            enum commandes a_envoyer = *commandes_attente.begin ();
-            Monde->commandes_recues.push_back (a_envoyer);
-            while (*commandes_attente.begin()==a_envoyer && current!= pause_commande)
-            {
-                commandes_attente.pop_front (); // on nettoie les appuis 'involontaires'
-            }
-            while (commandes_attente.begin()!= commandes_attente.end())
-            {
-                commandes_attente.pop_front (); // et le dernier 'pause_command'
-            }
+            Monde->commandes_recues.push_back (current);
         }
-        // perception de l'état du monde et //affichage:
+        previous = current;
+        //std::cout << "mouvement : " << current <<", " << previous <<std::endl;
+
+        //// donc on envoie aussi pause_move... mais ca ne fait rien..
+
+        //premiere version...fonctionnait quand on envoyait les commandes lors de l'avancement
+//        if (current == pause_commande)// on envoie ce qu'il y a avant
+//        {
+//            enum commandes a_envoyer = *commandes_attente.begin ();
+//            Monde->commandes_recues.push_back (a_envoyer);
+//            while (*commandes_attente.begin()==a_envoyer && current!= pause_commande)
+//            {
+//                commandes_attente.pop_front (); // on nettoie les appuis 'involontaires'
+//            }
+//            while (commandes_attente.begin()!= commandes_attente.end())
+//            {
+//                commandes_attente.pop_front (); // et le dernier 'pause_command'
+//            }
+//        }
+        //perception de l'état du monde et //affichage:
         window.clear();
         if (!MaPartie.game_over)
         {
