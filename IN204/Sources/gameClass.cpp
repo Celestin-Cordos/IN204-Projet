@@ -142,17 +142,19 @@ bool Piece::elementary_unrotate()
     {
         for (int j = 0; j< taille_matrice; j++)
         {
+            //matrice_temp [taille_matrice*j+i] = matrice[taille_matrice*(taille_matrice-1-i) + j];
             matrice_temp [taille_matrice*i+j] = matrice[taille_matrice*(taille_matrice-1-j) + i];
-            if (pos_premiere_case[0] +i< n && pos_premiere_case[0] +i>=0) // si la case appartient à la grande matrice
+            std::cout << "case " << i <<", " <<j<< "; "<<pos_premiere_case[0] +j<<"; " <<matrice_temp[i+taille_matrice*j]<< std::endl;
+            if (pos_premiere_case[0] +j< n && pos_premiere_case[0] +j>=0) // si la case appartient à la grande matrice
             {
-                if (monde->get_matrix()[(pos_premiere_case[0] +i)+taille_matrice*(pos_premiere_case[1]+j)]==1&&matrice_temp[i+taille_matrice*j] == 1)
+                    if (monde->get_matrix()[taille_matrice*(pos_premiere_case[0] +i)+(pos_premiere_case[1]+j)]!=Black&&matrice_temp[taille_matrice*i+j] == 1)
                 {
                     return false;
                 }
             }
             else // si elle n'y appartient pas... il faut que la case de la petite matrice ne soit pas occupée
             {
-                if (matrice_temp [i+taille_matrice*j]==1)
+                if (matrice_temp [taille_matrice*i+j]==1)
                 {
                     return false;
                 }
@@ -163,7 +165,7 @@ bool Piece::elementary_unrotate()
     matrice = matrice_temp;
     rotation++;
     return permission;
-
+    //NB::ici on utilise partout [taille*i+j]; pas une faute; rester coherent av la formule de rotation
 
 }
 
@@ -177,10 +179,12 @@ bool Piece::elementary_rotate()
     {
         for (int j = 0; j< taille_matrice; j++)
         {
+            //matrice_temp[taille_matrice*(taille_matrice-1-j) + i] = matrice[taille_matrice*i+j] ;
             matrice_temp[taille_matrice*(taille_matrice-1-j) + i] = matrice[taille_matrice*i+j] ;
-            if (pos_premiere_case[0] +i< n && pos_premiere_case[0] +i>=0) // si la case appartient à la matrice
+            std::cout << "case " << i <<", " <<j<< "; "<<pos_premiere_case[0] +j<< std::endl;
+            if (pos_premiere_case[0] +j< n && pos_premiere_case[0] +j>=0) // si la case appartient à la matrice
             {
-                if (monde->get_matrix()[(pos_premiere_case[0] +i)+taille_matrice*(pos_premiere_case[1]+j)]==1&&matrice_temp[i+taille_matrice*j] == 1)
+                if (monde->get_matrix()[(pos_premiere_case[0] +i)+taille_matrice*(pos_premiere_case[1]+j)]!=Black&&matrice_temp[i+taille_matrice*j] == 1)
                 {
                     return false;
                 }
@@ -257,7 +261,7 @@ void Board::append_case (int i, int j, enum color couleur)
 void Board::nouvelle_piece ()// pour l'instant, on n'ajoute que des cubes
 {
     enum type pieceT = *pieces_suivantes.begin();
-    Piece *piece = new Piece (pieceT, Red, 0,correspondances_forme_position[pieceT]);
+    Piece *piece = new Piece (pieceT, Red, int (WIDTH/2)-2,correspondances_forme_position[pieceT]);
     pieces_suivantes.pop_front();
     current_piece = piece;
     piece->monde = this;

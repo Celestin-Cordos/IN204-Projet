@@ -8,10 +8,10 @@
 sf::Color correspondance_couleurs_sfml [] = {sf::Color::Black, sf::Color::Red, sf::Color::Green, sf::Color::Blue, sf::Color::Yellow, sf::Color::Magenta, sf::Color::Cyan};
 
 // en pixels:
-int HEIGHT = 40; // en cases
-int WIDTH = 20;
-int STEP = 20;
-int TIME_STEP = 20; // au bout de combien de temps on parcours un pas d'espace; a noter que c'est en frames et depend du nombre de fps de la fenetre
+int HEIGHT = 25; // en cases
+int WIDTH = 15;
+int STEP = 30;
+int TIME_STEP = 45; // au bout de combien de temps on parcours un pas d'espace; a noter que c'est en frames et depend du nombre de fps de la fenetre
 
 // Il faut donc initialiser les fenetres avec le meme nombre de fps
 
@@ -156,10 +156,18 @@ int main()
                         rectangle.setFillColor (correspondance_couleurs_sfml[Monde->current_piece->piece_color]);
                         rectangle.setPosition(STEP*(i + x),STEP*(j+y));
                         window.draw(rectangle);
+
+
                         //std::cout << i <<", "<<j<< ", "<<Monde.current_piece->matrice[n*j+i] <<std::endl;
                     }
                 }
+                        sf::Vertex line[] =
+                        {
+                            sf::Vertex(sf::Vector2f(STEP*(i + x),0)),
+                            sf::Vertex(sf::Vector2f(STEP*(i + x),STEP*HEIGHT))
+                        };
 
+                        window.draw(line, 2, sf::Lines);
             }
 
         }
