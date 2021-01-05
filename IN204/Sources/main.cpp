@@ -28,7 +28,7 @@ int main()
 //    }
     sf::RenderWindow window(sf::VideoMode(WIDTH*STEP, STEP*HEIGHT), "Tetris");
     window.setPosition (sf::Vector2i(0, 0));
-    window.setFramerateLimit (60);
+    window.setFramerateLimit (40);
     std::list <enum commandes> commandes_attente;
     enum commandes current;
     enum commandes previous = pause_commande;
@@ -105,7 +105,7 @@ int main()
 //                commandes_attente.pop_front (); // et le dernier 'pause_command'
 //            }
 //        }
-        //perception de l'état du monde et //affichage:
+        //perception de l'ï¿½tat du monde et //affichage:
         window.clear();
         if (!MaPartie.game_over)
         {

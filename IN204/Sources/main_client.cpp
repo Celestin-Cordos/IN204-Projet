@@ -3,13 +3,14 @@
 #include <SFML/Network.hpp>
 #include <string>
 #include <iostream>
+#include <vector>
+//#include <conio.h>
+#include <curses.h>
+#include "network.hpp"
 using namespace std;
 
-//THIS IS A PRIMITIVE VERSION :
-//SERVER - CLIENT
-//WITH ONLY ONE CLIENT
-
 int main() {
+	/*
 	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
 	//tcp connexion : needs a connexion to work
 	sf::TcpSocket socket;
@@ -59,7 +60,53 @@ int main() {
 		}
 	}
 
-	system("pause");
+	system("pause");*/
+
+	/*Client player;
+
+    bool done = false;
+	string text;
+	while (!done) {
+		getline(cin, text);
+		player.send(text);
+	}*/
+
+	sf::IpAddress ip = sf::IpAddress::getLocalAddress();
+	sf::TcpSocket socket;
+	bool done = false;
+	string id;
+	string text = "";
+
+	cout << "Enter online id: ";
+	std::cin >> id;
+
+	socket.connect(ip, 8080);
+
+	sf::Packet packet;
+	packet << id;
+	socket.send(packet);
+	socket.setBlocking(false);
+
+	while (!done) {
+		//if rece
+		//receive order to play
+		//send status
+		getline(cin, text);
+		sf::Packet packet;
+		packet << id + ": " + text;
+		socket.send(packet);
+		text = "";
+
+		sf::Packet receivePacket;
+		socket.receive(receivePacket);
+		
+		string temptext;
+		if (receivePacket >> temptext) {
+			cout << temptext;
+		}
+	}
+
+	
 
 	return 0;
 }
