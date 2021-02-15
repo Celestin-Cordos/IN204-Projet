@@ -1,3 +1,0 @@
-FOR LINUX USERS:
-To grant permission to execute : ./compiler.sh
-enter the following command : chmod u+x compiler.sh
