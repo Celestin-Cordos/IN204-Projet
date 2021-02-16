@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1608724764 source:g:\documents\github\in204-projet\in204\sources\main.cpp
+1609840805 source:g:\documents\github\in204-projet\in204\sources\main.cpp
 	<cstdio>
 	<cstdlib>
 	<iostream>
@@ -416,9 +416,9 @@
 	<SFML/Graphics/Drawable.hpp>
 	<SFML/Window/GlResource.hpp>
 
-1608724657 source:g:\documents\github\in204-projet\in204\sources\gameclass.cpp
+1609837874 source:g:\documents\github\in204-projet\in204\sources\gameclass.cpp
 	<iostream>
-	"../include/gameClass.hpp"
+	"../Include/gameClass.hpp"
 	<vector>
 	<math.h>
 	<cstdlib>

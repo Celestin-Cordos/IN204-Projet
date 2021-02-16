@@ -129,6 +129,8 @@ int main()
                     if (couleur != Black)
                     {
                         rectangle.setFillColor (correspondance_couleurs_sfml[couleur]);
+                        rectangle.setOutlineColor (sf::Color::White);
+                        rectangle.setOutlineThickness(1);
                         rectangle.setPosition(STEP*i,STEP*j);
                         window.draw(rectangle);
                     }
