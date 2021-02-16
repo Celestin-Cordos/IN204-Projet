@@ -1,0 +1,22 @@
+To grant permission to execute : ./compiler.sh
+we have to enter the following command : chmod u+x compiler.sh
+
+
+https://www.youtube.com/watch?v=yq1fAtpUW1E
+https://www.sfml-dev.org/documentation/2.5.1/classsf_1_1SocketSelector.php
+https://github.com/SFML/SFML/wiki/Source%3A-Network-Chat-Example
+
+Ce qui est attendu:
+C'est que si le serveur parcours continument tous les clients et s'il recoit un input d'un client, il l'affiche. 
+Pour chaque client il renvoie la matrice même si ce client n'a fait aucun input.
+
+Ici:
+Le serveur consiste en 1 thread par client qui écoute, traite (à faire) et répond
+
+Le client consiste en 3 thread, 1 thread qui écoute le serveur, 1 thread qui parle au serveur à interval régulier (ping si rien à dire), et 1 thread qui écoute le clavier (ici dans le "main" thread)
+
+Reste à faire:
+J'ai fait les thread à partir de lambda fonction qui peuvent être transformé en vraie fonction pour plus de clarté.
+Traité les inputs reçu par le serveur pour modifier l'état du jeu (attention à bien protéger celui ci par un mutex)
+Traiter les messages reçus par le client pour l'afficher, là aussi il faudra le protéger.
+Gérer les problèmes de synchronisation si il y a lieu qui pourrait venir des variations dans le traitement des données.
