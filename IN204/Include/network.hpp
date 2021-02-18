@@ -14,7 +14,7 @@ struct Connexion {
   std::size_t id;
   std::string name;
   socket_t socket;
-  std::string input;
+  commandes input;
   std::string state;
 
   Connexion(std::size_t id, std::string const &name, socket_t socket)
@@ -62,7 +62,7 @@ public:
 
   void run();
 
-  void send(char cmd);
+  void send(commandes cmd);
 
   void stop() { _running = false; }
 

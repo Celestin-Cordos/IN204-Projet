@@ -13,10 +13,10 @@ Server::Server() {
 }
 
 std::vector<commandes> Server::receive() {
-  std::vector<commandes> result(2, none);
+  std::vector<commandes> result(_clients.size(), ping);
   std::lock_guard<std::mutex> lock(_mtx);
   for (auto &client : _clients) {
-    result[client.id] = static_cast<commandes>(client.input[0]);
+    result[client.id] = client.input;
   }
   return result;
 }
@@ -55,7 +55,7 @@ void Server::run() {
   for (auto &client : _clients) {
     threads.emplace_back([this, &client]() {
       while (_running) {
-        std::string input;
+        uint8_t input;
         { // Receive
           sf::Packet packet;
           auto status = client.socket->receive(packet);
@@ -68,12 +68,12 @@ void Server::run() {
           std::cout << "Received from client " << client.id << ": " << input
                     << std::endl;
 
-          if (input == "exit") {
+          if (input == commandes::byebye) {
             std::cout << "Client " << client.id << " disconnected" << std::endl;
             return;
           }
 
-          if (input == "ping") {
+          if (input == commandes::ping) {
             // dismiss
             continue;
           }
@@ -82,7 +82,7 @@ void Server::run() {
         sf::Packet board;
         {
           std::lock_guard<std::mutex> lock(_mtx);
-          client.input = input;
+          client.input = static_cast<commandes>(input);
           board << client.state;
         }
 
@@ -144,10 +144,10 @@ void Client::run() {
   // Write to server in a separate thread on regular basis
   std::thread writing_thread([this]() {
     while (_running) {
-      std::cout << "sending update to server" << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(200));
       std::lock_guard<std::mutex> lock(_buffer_mtx);
       if (_buffer.getDataSize() > 0) {
+        std::cout << "sending update to server: " << _buffer << std::endl;
         auto status = _socket.send(_buffer);
         if (status != sf::Socket::Done) {
           std::cout << "Disconnected from server" << std::endl;
@@ -156,8 +156,9 @@ void Client::run() {
         }
         _buffer.clear();
       } else {
+        std::cout << "sending ping to server" << std::endl;
         sf::Packet ping;
-        ping << std::string("ping");
+        ping << commandes::ping;
         auto status = _socket.send(ping);
         if (status != sf::Socket::Done) {
           return;
@@ -171,7 +172,7 @@ void Client::run() {
   writing_thread.join();
 }
 
-void Client::send(char cmd) {
+void Client::send(commandes cmd) {
   std::lock_guard<std::mutex> lock(_buffer_mtx);
   _buffer << cmd;
 }

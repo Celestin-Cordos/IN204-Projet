@@ -111,6 +111,7 @@ void MainClient() {
     }
 
     if (current != previous) {
+      std::cout << "sending current: " << current << std::endl;
       network_client.send(current);
     }
     previous = current;
