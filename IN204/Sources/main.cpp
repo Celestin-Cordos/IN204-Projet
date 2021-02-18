@@ -24,8 +24,12 @@ int TIME_STEP =
 
 void MainServeur() {
   Server network_server;
-  // TODO: handle connection
+
   std::thread writing_thread([&network_server]() { network_server.run(); });
+
+  while (!network_server.numberOfConnection()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 
   std::srand(std::time(nullptr));
   Game MaPartie(WIDTH, HEIGHT, STEP, 1);
@@ -54,6 +58,8 @@ void MainServeur() {
 
     // TODO: send state
     network_server.send(state, 0);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   }
 }
 
@@ -62,6 +68,10 @@ void MainClient() {
 
   // TODO: handle connection
   std::thread writing_thread([&network_client]() { network_client.run(); });
+
+  while (!network_client.connected()) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
 
   std::srand(std::time(nullptr));
   Game MaPartie(WIDTH, HEIGHT, STEP, 1);
@@ -107,44 +117,41 @@ void MainClient() {
     window.clear();
 
     std::string board = network_client.receive();
-    if (!MaPartie.game_over) {
-      int n;
+    int n;
 
-      for (int i = 0; i < WIDTH; i++) {
-        for (int j = 0; j < HEIGHT; j++) {
+    for (int i = 0; i < WIDTH; i++) {
+      for (int j = 0; j < HEIGHT; j++) {
+        sf::RectangleShape rectangle(sf::Vector2f(STEP, STEP));
+        auto couleur = board[i + WIDTH * j];
+
+        if (couleur != Black) {
+          rectangle.setFillColor(correspondance_couleurs_sfml[couleur]);
+          rectangle.setOutlineColor(sf::Color::White);
+          rectangle.setOutlineThickness(1);
+          rectangle.setPosition(STEP * i, STEP * j);
+          window.draw(rectangle);
+        }
+      }
+    }
+    n = Monde->current_piece->taille_matrice;
+    int x = Monde->current_piece->pos_premiere_case[0];
+    int y = Monde->current_piece->pos_premiere_case[1];
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
+        if (Monde->current_piece->matrice[n * j + i] == 1) {
           sf::RectangleShape rectangle(sf::Vector2f(STEP, STEP));
-          auto couleur = board[i + WIDTH * j];
-
-          if (couleur != Black) {
-            rectangle.setFillColor(correspondance_couleurs_sfml[couleur]);
-            rectangle.setOutlineColor(sf::Color::White);
-            rectangle.setOutlineThickness(1);
-            rectangle.setPosition(STEP * i, STEP * j);
-            window.draw(rectangle);
-          }
+          rectangle.setFillColor(
+              correspondance_couleurs_sfml[Monde->current_piece->piece_color]);
+          rectangle.setPosition(STEP * (i + x), STEP * (j + y));
+          window.draw(rectangle);
         }
       }
-      n = Monde->current_piece->taille_matrice;
-      int x = Monde->current_piece->pos_premiere_case[0];
-      int y = Monde->current_piece->pos_premiere_case[1];
+      sf::Vertex line[] = {
+          sf::Vertex(sf::Vector2f(STEP * (i + x), 0)),
+          sf::Vertex(sf::Vector2f(STEP * (i + x), STEP * HEIGHT))};
 
-      for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-          if (Monde->current_piece->matrice[n * j + i] == 1) {
-            sf::RectangleShape rectangle(sf::Vector2f(STEP, STEP));
-            rectangle.setFillColor(
-                correspondance_couleurs_sfml[Monde->current_piece
-                                                 ->piece_color]);
-            rectangle.setPosition(STEP * (i + x), STEP * (j + y));
-            window.draw(rectangle);
-          }
-        }
-        sf::Vertex line[] = {
-            sf::Vertex(sf::Vector2f(STEP * (i + x), 0)),
-            sf::Vertex(sf::Vector2f(STEP * (i + x), STEP * HEIGHT))};
-
-        window.draw(line, 2, sf::Lines);
-      }
+      window.draw(line, 2, sf::Lines);
     }
     window.display();
   }

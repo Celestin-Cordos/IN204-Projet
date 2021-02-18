@@ -43,6 +43,8 @@ public:
     std::lock_guard<std::mutex> lock(_mtx);
     _clients[id].state = state;
   }
+
+  std::size_t numberOfConnection() const { return _clients.size(); }
 };
 
 class Client {
@@ -51,6 +53,7 @@ private:
   sf::Packet _buffer;
   std::mutex _buffer_mtx;
   std::atomic_bool _running;
+  std::atomic_bool _is_connected;
   std::string _input;
   std::mutex _input_mtx;
 
@@ -64,6 +67,8 @@ public:
   void stop() { _running = false; }
 
   std::string receive();
+
+  bool connected() const { return _is_connected; }
 };
 
 #endif

@@ -7,7 +7,10 @@
 const unsigned short PORT = 8080;
 sf::IpAddress IP = sf::IpAddress::getLocalAddress();
 
-Server::Server() { _listener.listen(PORT, IP); }
+Server::Server() {
+  _listener.listen(PORT, IP);
+  _running = false;
+}
 
 std::vector<commandes> Server::receive() {
   std::vector<commandes> result(2, none);
@@ -19,6 +22,7 @@ std::vector<commandes> Server::receive() {
 }
 
 void Server::run() {
+  _running = true;
 
   int total_nb = 1;
   while (_clients.size() < total_nb) {
@@ -50,7 +54,7 @@ void Server::run() {
   std::vector<std::thread> threads;
   for (auto &client : _clients) {
     threads.emplace_back([this, &client]() {
-      while (true) {
+      while (_running) {
         std::string input;
         { // Receive
           sf::Packet packet;
@@ -102,6 +106,7 @@ void Server::run() {
 Client::Client() {
   _socket.connect(IP, PORT);
   _running = false;
+  _is_connected = false;
   std::cout << "You are connected as a Player" << std::endl;
 }
 
@@ -114,6 +119,7 @@ void Client::run() {
     sf::Packet id_packet;
     id_packet << id;
     _socket.send(id_packet);
+    _is_connected = true;
     std::cout << "Connection success" << std::endl;
   } else {
     std::cout << "Connection failure" << std::endl;
@@ -138,6 +144,7 @@ void Client::run() {
   // Write to server in a separate thread on regular basis
   std::thread writing_thread([this]() {
     while (_running) {
+      std::cout << "sending update to server" << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(200));
       std::lock_guard<std::mutex> lock(_buffer_mtx);
       if (_buffer.getDataSize() > 0) {
@@ -160,7 +167,6 @@ void Client::run() {
   });
 
   // Cleanup
-  _running = false;
   listening_thread.join();
   writing_thread.join();
 }
