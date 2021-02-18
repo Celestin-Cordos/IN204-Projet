@@ -1,10 +1,12 @@
 #include "../Include/gameClass.hpp"
 #include "network.hpp"
 #include <SFML/Graphics.hpp>
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <thread>
 
 sf::Color correspondance_couleurs_sfml[] = {
     sf::Color::Black,  sf::Color::Red,     sf::Color::Green, sf::Color::Blue,
@@ -21,50 +23,48 @@ int TIME_STEP =
 // Il faut donc initialiser les fenetres avec le meme nombre de fps
 
 void MainServeur() {
-  Server server;
-  server.run();
-}
-
-void MainClient() {
-  Client client;
-  client.run();
-}
-
-int main(int argc, char *argv[]) {
-  std::cout << "Bienvenue dans le test de communication de Tetris" << std::endl;
-
-  char who;
-  std::cout << "Do you want to be a server (s) or a client (c) ? ";
-  std::cin >> who;
-
-  if (who == 's') {
-    std::cout << "Creation d'un serveur" << std::endl;
-    std::string password = " ";
-    // ask for password to login as server
-    while (password != "tetris") {
-      std::cout << "Enter password : ";
-      std::cin >> password;
-      if (password != "tetris") {
-        std::cout << "Wrong password! Please try again.\n" << std::endl;
-      }
-    }
-
-    MainServer();
-    return 0;
-  }
-  MainClient();
-  return 0;
+  Server network_server;
+  // TODO: handle connection
+  std::thread writing_thread([&network_server]() { network_server.run(); });
 
   std::srand(std::time(nullptr));
   Game MaPartie(WIDTH, HEIGHT, STEP, 1);
-  //    std::cout << "Debut d'affichage" << std::endl;
-  //    for (int i = 0; i<WIDTH; i++ )
-  //    {
-  //        for (int j = 0; j<HEIGHT; j++)
-  //            std::cout << i << ", " << j<< ":" << Monde.get_case(i,j)<<
-  //            std::endl;
-  //
-  //    }
+
+  auto Monde = MaPartie.Jeux[0]; // un pointeur, donc
+  int i = 0;
+  while (!MaPartie.game_over) {
+    i++;
+
+    // TODO: receive cmd from client
+    auto cmd = network_server.receive()[0];
+    Monde->commandes_recues.push_back(cmd);
+
+    Monde->executer_commandes();
+    if (i % TIME_STEP == 0) {
+      MaPartie.continuer();
+    }
+
+    std::string state;
+    for (int i = 0; i < WIDTH; i++) {
+      for (int j = 0; j < HEIGHT; j++) {
+        auto couleur = Monde->get_case(i, j);
+        state.push_back(couleur);
+      }
+    }
+
+    // TODO: send state
+    network_server.send(state, 0);
+  }
+}
+
+void MainClient() {
+  Client network_client;
+
+  // TODO: handle connection
+  std::thread writing_thread([&network_client]() { network_client.run(); });
+
+  std::srand(std::time(nullptr));
+  Game MaPartie(WIDTH, HEIGHT, STEP, 1);
   sf::RenderWindow window(sf::VideoMode(WIDTH * STEP, STEP * HEIGHT), "Tetris");
   window.setPosition(sf::Vector2i(0, 0));
   window.setFramerateLimit(40);
@@ -76,20 +76,15 @@ int main(int argc, char *argv[]) {
   int i = 0;
   while (window.isOpen()) {
     i++;
-    // std::cout << "Frame"<< std::endl;
     sf::Event event;
     while (window.pollEvent(event)) {
       if (event.type == sf::Event::Closed)
         window.close();
     }
-    // avancement
-    // std::cout << i <<"; "<< TIME_STEP << std::endl;
     Monde->executer_commandes();
     if (i % TIME_STEP == 0) {
       MaPartie.continuer();
     }
-
-    // enregistrement des commandes
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
       current = move_right;
@@ -105,52 +100,20 @@ int main(int argc, char *argv[]) {
       current = pause_commande;
     }
 
-    // std::cout << "mouvement : " << current <<", " << previous <<std::endl;
     if (current != previous) {
-      Monde->commandes_recues.push_back(current);
+      network_client.send(current);
     }
     previous = current;
-    // std::cout << "mouvement : " << current <<", " << previous <<std::endl;
-
-    //// donc on envoie aussi pause_move... mais ca ne fait rien..
-
-    // premiere version...fonctionnait quand on envoyait les commandes lors de
-    // l'avancement
-    //        if (current == pause_commande)// on envoie ce qu'il y a avant
-    //        {
-    //            enum commandes a_envoyer = *commandes_attente.begin ();
-    //            Monde->commandes_recues.push_back (a_envoyer);
-    //            while (*commandes_attente.begin()==a_envoyer && current!=
-    //            pause_commande)
-    //            {
-    //                commandes_attente.pop_front (); // on nettoie les appuis
-    //                'involontaires'
-    //            }
-    //            while (commandes_attente.begin()!= commandes_attente.end())
-    //            {
-    //                commandes_attente.pop_front (); // et le dernier
-    //                'pause_command'
-    //            }
-    //        }
-    // perception de l'�tat du monde et //affichage:
     window.clear();
+
+    std::string board = network_client.receive();
     if (!MaPartie.game_over) {
       int n;
 
       for (int i = 0; i < WIDTH; i++) {
         for (int j = 0; j < HEIGHT; j++) {
           sf::RectangleShape rectangle(sf::Vector2f(STEP, STEP));
-          //                for (int i = 0; i<WIDTH; i++ )
-          //                {
-          //                    for (int j = 0; j<HEIGHT; j++)
-          //                        std::cout << i << ", " << j<< ":" <<
-          //                        Monde.get_case(i,j)<< std::endl;
-          //
-          //                }
-          //                exit (-1);
-          auto couleur = Monde->get_case(i, j);
-          // std::cout <<  WIDTH*j+i<< "/" <<WIDTH*HEIGHT <<": " <<couleur <<
-          // std::endl;
+          auto couleur = board[i + WIDTH * j];
 
           if (couleur != Black) {
             rectangle.setFillColor(correspondance_couleurs_sfml[couleur]);
@@ -161,17 +124,9 @@ int main(int argc, char *argv[]) {
           }
         }
       }
-      // std::cout << "here" << std::endl; exit (-1);
-
       n = Monde->current_piece->taille_matrice;
-      // std::cout << "current piece: " << std::endl; exit (-1);
-      // std::cout << Monde.current_piece->pos_premiere_case[0] <<
-      // Monde.current_piece->pos_premiere_case[1] << std::endl;
       int x = Monde->current_piece->pos_premiere_case[0];
       int y = Monde->current_piece->pos_premiere_case[1];
-      //        std::cout << x << y << std::endl;
-      //        std::cout << "here" << std::endl;
-      //        exit (-1);
 
       for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
@@ -182,9 +137,6 @@ int main(int argc, char *argv[]) {
                                                  ->piece_color]);
             rectangle.setPosition(STEP * (i + x), STEP * (j + y));
             window.draw(rectangle);
-
-            // std::cout << i <<", "<<j<< ",
-            // "<<Monde.current_piece->matrice[n*j+i] <<std::endl;
           }
         }
         sf::Vertex line[] = {
@@ -195,8 +147,5 @@ int main(int argc, char *argv[]) {
       }
     }
     window.display();
-    //        std::cout<< n << "sorti " <<std::endl; exit (-1);
   }
-
-  return 0;
 }

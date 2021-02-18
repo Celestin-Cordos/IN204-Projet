@@ -9,9 +9,18 @@ sf::IpAddress IP = sf::IpAddress::getLocalAddress();
 
 Server::Server() { _listener.listen(PORT, IP); }
 
+std::vector<commandes> Server::receive() {
+  std::vector<commandes> result(2, none);
+  std::lock_guard<std::mutex> lock(_mtx);
+  for (auto &client : _clients) {
+    result[client.id] = static_cast<commandes>(client.input[0]);
+  }
+  return result;
+}
+
 void Server::run() {
 
-  int total_nb = 2;
+  int total_nb = 1;
   while (_clients.size() < total_nb) {
     std::cout << "En attente de client" << std::endl;
 
@@ -32,44 +41,50 @@ void Server::run() {
               << total_nb << ") - IP : " << socket->getRemoteAddress()
               << std::endl;
 
-    _clients.emplace_back(id, socket);
+    _clients.emplace_back(_clients.size(), id, socket);
   }
 
   std::cout << "Connection success" << std::endl;
 
   // Start a thread by client to listen
   std::vector<std::thread> threads;
-  for (auto client : _clients) {
-    threads.emplace_back([client]() {
+  for (auto &client : _clients) {
+    threads.emplace_back([this, &client]() {
       while (true) {
         std::string input;
         { // Receive
           sf::Packet packet;
-          auto status = client.second->receive(packet);
+          auto status = client.socket->receive(packet);
           if (status == sf::Socket::Done) {
             packet >> input;
           } else {
             std::cout << "Exiting" << std::endl;
             return;
           }
-          std::cout << "Received from client " << client.first << ": " << input
+          std::cout << "Received from client " << client.id << ": " << input
                     << std::endl;
 
           if (input == "exit") {
-            std::cout << "Client " << client.first << " disconnected"
-                      << std::endl;
+            std::cout << "Client " << client.id << " disconnected" << std::endl;
             return;
+          }
+
+          if (input == "ping") {
+            // dismiss
+            continue;
           }
         }
 
-        // TODO: use input
-        //
+        sf::Packet board;
+        {
+          std::lock_guard<std::mutex> lock(_mtx);
+          client.input = input;
+          board << client.state;
+        }
 
         { // Reply
-          std::cout << "Sending update to client " << client.first << std::endl;
-          sf::Packet board;
-          board << "this is the state of the game";
-          auto status = client.second->send(board);
+          std::cout << "Sending update to client " << client.id << std::endl;
+          auto status = client.socket->send(board);
           if (status != sf::Socket::Done) {
             std::cout << "Disconnected from client" << std::endl;
             return;
@@ -86,10 +101,12 @@ void Server::run() {
 
 Client::Client() {
   _socket.connect(IP, PORT);
+  _running = false;
   std::cout << "You are connected as a Player" << std::endl;
 }
 
 void Client::run() {
+  _running = true;
   std::string id;
   std::cout << "Enter online id: ";
   std::cin >> id;
@@ -103,38 +120,34 @@ void Client::run() {
   }
 
   // listen to server in a separate thread
-  std::atomic_bool running(true);
-  std::thread listening_thread([this, &running]() {
-    while (running) {
+  std::thread listening_thread([this]() {
+    while (_running) {
       std::cout << "Listening to server" << std::endl;
       sf::Packet id_packet;
-      std::string input;
       if (_socket.receive(id_packet) == sf::Socket::Done) {
-        id_packet >> input;
+        id_packet >> _input;
       } else {
         std::cout << "Disconnected from server" << std::endl;
-        running = false;
+        _running = false;
         break;
       }
-      std::cout << "received from server: " << input << std::endl;
+      std::cout << "received from server: " << _input << std::endl;
     }
   });
 
   // Write to server in a separate thread on regular basis
-  sf::Packet buffer;
-  std::mutex buffer_mtx;
-  std::thread writing_thread([this, &running, &buffer, &buffer_mtx]() {
-    while (running) {
+  std::thread writing_thread([this]() {
+    while (_running) {
       std::this_thread::sleep_for(std::chrono::milliseconds(200));
-      std::lock_guard<std::mutex> lock(buffer_mtx);
-      if (buffer.getDataSize() > 0) {
-        auto status = _socket.send(buffer);
+      std::lock_guard<std::mutex> lock(_buffer_mtx);
+      if (_buffer.getDataSize() > 0) {
+        auto status = _socket.send(_buffer);
         if (status != sf::Socket::Done) {
           std::cout << "Disconnected from server" << std::endl;
-          running = false;
+          _running = false;
           return;
         }
-        buffer.clear();
+        _buffer.clear();
       } else {
         sf::Packet ping;
         ping << std::string("ping");
@@ -146,29 +159,18 @@ void Client::run() {
     }
   });
 
-  // get keyboard input
-  while (running) {
-    std::string input;
-    std::cout << "\nEnter \"exit\" to quit or message to send: ";
-    getline(std::cin, input);
-    if (!input.size())
-      continue;
-
-    // Send input  to server (even last msg)
-    {
-      std::lock_guard<std::mutex> lock(buffer_mtx);
-      buffer << input;
-    }
-
-    if (input == "exit") {
-      std::cout << "Bye bye" << std::endl;
-      running = false;
-      break;
-    }
-  }
-
   // Cleanup
-  running = false;
+  _running = false;
   listening_thread.join();
   writing_thread.join();
+}
+
+void Client::send(char cmd) {
+  std::lock_guard<std::mutex> lock(_buffer_mtx);
+  _buffer << cmd;
+}
+
+std::string Client::receive() {
+  std::lock_guard<std::mutex> lock(_input_mtx);
+  return _input;
 }
