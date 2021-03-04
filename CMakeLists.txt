@@ -12,11 +12,11 @@ add_subdirectory(external/SFML)
 
 include_directories(Include)
 
-add_executable(tetris Sources/main.cpp Sources/gameClass.cpp Sources/network.cpp)
+add_executable(${PROJECT_NAME} Sources/main.cpp Sources/gameClass.cpp Sources/network.cpp)
 
-target_link_libraries(tetris sfml-window sfml-graphics sfml-system sfml-audio sfml-network)
+target_link_libraries(${PROJECT_NAME} sfml-window sfml-graphics sfml-system sfml-audio sfml-network)
 
-target_include_directories(tetris
+target_include_directories(${PROJECT_NAME}
   SYSTEM PUBLIC
   external/SFML/include/
 )
@@ -25,8 +25,6 @@ target_include_directories(tetris
 ## INSTALL ##
 ##############
 
-set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_SOURCE_DIR}/output)
         
-install(TARGETS tetris sfml-window sfml-graphics sfml-system sfml-audio sfml-network
-        DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/bin
-        )
+install(TARGETS ${PROJECT_NAME} sfml-window sfml-graphics sfml-system sfml-audio sfml-network)
