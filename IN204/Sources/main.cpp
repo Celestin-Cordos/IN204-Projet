@@ -1,181 +1,270 @@
+#include "../Include/gameClass.hpp"
+#include "../Include/network.hpp"
+#include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
-#include <iostream>
-#include <SFML/Graphics.hpp>
 #include <ctime>
-#include "../Include/gameClass.hpp"
+#include <iostream>
+#include <thread>
 
-sf::Color correspondance_couleurs_sfml [] = {sf::Color::Black, sf::Color::Red, sf::Color::Green, sf::Color::Blue, sf::Color::Yellow, sf::Color::Magenta, sf::Color::Cyan};
+sf::Color correspondance_couleurs_sfml[] = {
+    sf::Color::Black, sf::Color::Red, sf::Color::Green, sf::Color::Blue,
+    sf::Color::Yellow, sf::Color::Magenta, sf::Color::Cyan};
 
 // en pixels:
 int HEIGHT = 25; // en cases
 int WIDTH = 15;
 int STEP = 30;
-int TIME_STEP = 45; // au bout de combien de temps on parcours un pas d'espace; a noter que c'est en frames et depend du nombre de fps de la fenetre
+int TIME_STEP = 45; // au bout de combien de temps on parcours un pas d'espace; a noter que
+                    // c'est en frames et depend du nombre de fps de la fenetre
 
 // Il faut donc initialiser les fenetres avec le meme nombre de fps
 
-int main()
+void MainServeur()
 {
-    std::srand(std::time(nullptr));
-    Game MaPartie (WIDTH, HEIGHT, STEP, 1);
-//    std::cout << "Debut d'affichage" << std::endl;
-//    for (int i = 0; i<WIDTH; i++ )
-//    {
-//        for (int j = 0; j<HEIGHT; j++)
-//            std::cout << i << ", " << j<< ":" << Monde.get_case(i,j)<< std::endl;
-//
-//    }
-    sf::RenderWindow window(sf::VideoMode(WIDTH*STEP, STEP*HEIGHT), "Tetris");
-    window.setPosition (sf::Vector2i(0, 0));
-    window.setFramerateLimit (40);
-    std::list <enum commandes> commandes_attente;
-    enum commandes current;
-    enum commandes previous = pause_commande;
+  Server network_server(WIDTH, HEIGHT, 1);
 
-    auto Monde = MaPartie.Jeux[0]; // un pointeur, donc
-    int i = 0;
-    while (window.isOpen())
+  std::thread writing_thread([&network_server]() { network_server.run(); });
+
+  while (!network_server.numberOfConnection())
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  std::srand(std::time(nullptr));
+  Game MaPartie(WIDTH, HEIGHT, STEP, 1);
+
+  auto Monde = MaPartie.Jeux[0]; // un pointeur, donc
+  int i = 0;
+  while (!MaPartie.game_over)
+  {
+    i++;
+
+    // TODO: receive cmd from client
+    auto cmd = network_server.receive()[0];
+    std::cout << "commande recue par le serveur : " << cmd << std::endl;
+    if (cmd != none)
+      Monde->commandes_recues.push_back(cmd);
+
+    Monde->executer_commandes();
+    //if (i % TIME_STEP == 0) {
+    MaPartie.continuer();
+    //}
+
+    std::vector<int> state;
+    for (int i = 0; i < WIDTH; i++)
     {
-        i++;
-        //std::cout << "Frame"<< std::endl;
-        sf::Event event;
-        while (window.pollEvent(event))
+      for (int j = 0; j < HEIGHT; j++)
+      {
+        int couleur = Monde->get_case(i, j);
+        state.push_back(couleur);
+      }
+    }
+    int n = Monde->current_piece->taille_matrice;
+    int x = Monde->current_piece->pos_premiere_case[0];
+    int y = Monde->current_piece->pos_premiere_case[1];
+
+    for (int i = 0; i < n; i++)
+    {
+      for (int j = 0; j < n; j++)
+      {
+        if (Monde->current_piece->matrice[n * j + i] == 1)
         {
-            if (event.type == sf::Event::Closed)
-                window.close();
+
+          state[((i + x) + WIDTH * (j + y))] = Monde->current_piece->piece_color;
+
+          //std::cout << i <<", "<<j<< ", "<<Monde.current_piece->matrice[n*j+i] <<std::endl;
         }
-        // avancement
-        //std::cout << i <<"; "<< TIME_STEP << std::endl;
-        Monde->executer_commandes ();
-        if (i%TIME_STEP == 0)
-        {
-            MaPartie.continuer ();
-        }
-
-        //enregistrement des commandes
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-        {
-             current = move_right;
-        }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-        {
-            current = move_left;
-        }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
-        {
-            current = move_down;
-        }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-        {
-            current = rotate_direct;
-        }
-        else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-        {
-            current = rotate_undirect;
-        }
-        else
-        {
-            current = pause_commande;
-        }
-
-
-        //std::cout << "mouvement : " << current <<", " << previous <<std::endl;
-        if (current!=previous)
-        {
-            Monde->commandes_recues.push_back (current);
-        }
-        previous = current;
-        //std::cout << "mouvement : " << current <<", " << previous <<std::endl;
-
-        //// donc on envoie aussi pause_move... mais ca ne fait rien..
-
-        //premiere version...fonctionnait quand on envoyait les commandes lors de l'avancement
-//        if (current == pause_commande)// on envoie ce qu'il y a avant
-//        {
-//            enum commandes a_envoyer = *commandes_attente.begin ();
-//            Monde->commandes_recues.push_back (a_envoyer);
-//            while (*commandes_attente.begin()==a_envoyer && current!= pause_commande)
-//            {
-//                commandes_attente.pop_front (); // on nettoie les appuis 'involontaires'
-//            }
-//            while (commandes_attente.begin()!= commandes_attente.end())
-//            {
-//                commandes_attente.pop_front (); // et le dernier 'pause_command'
-//            }
-//        }
-        //perception de l'�tat du monde et //affichage:
-        window.clear();
-        if (!MaPartie.game_over)
-        {
-            int n ;
-
-            for (int i = 0; i < WIDTH; i++)
-            {
-                for (int j = 0; j <HEIGHT; j++)
-                {
-                    sf::RectangleShape rectangle (sf::Vector2f(STEP,STEP));
-    //                for (int i = 0; i<WIDTH; i++ )
-    //                {
-    //                    for (int j = 0; j<HEIGHT; j++)
-    //                        std::cout << i << ", " << j<< ":" << Monde.get_case(i,j)<< std::endl;
-    //
-    //                }
-    //                exit (-1);
-                    auto couleur = Monde->get_case(i,j);
-                    //std::cout <<  WIDTH*j+i<< "/" <<WIDTH*HEIGHT <<": " <<couleur << std::endl;
-
-                    if (couleur != Black)
-                    {
-                        rectangle.setFillColor (correspondance_couleurs_sfml[couleur]);
-                        rectangle.setOutlineColor (sf::Color::White);
-                        rectangle.setOutlineThickness(1);
-                        rectangle.setPosition(STEP*i,STEP*j);
-                        window.draw(rectangle);
-                    }
-
-                }
-            }
-            //std::cout << "here" << std::endl; exit (-1);
-
-            n = Monde->current_piece->taille_matrice;
-            //std::cout << "current piece: " << std::endl; exit (-1);
-            //std::cout << Monde.current_piece->pos_premiere_case[0] << Monde.current_piece->pos_premiere_case[1] << std::endl;
-            int x = Monde->current_piece->pos_premiere_case[0];
-            int y = Monde->current_piece->pos_premiere_case[1];
-    //        std::cout << x << y << std::endl;
-    //        std::cout << "here" << std::endl;
-    //        exit (-1);
-
-            for (int i = 0; i<n ; i++)
-            {
-                for (int j = 0; j<n ; j++)
-                {
-                    if (Monde->current_piece->matrice[n*j +i] == 1)
-                    {
-                        sf::RectangleShape rectangle (sf::Vector2f(STEP,STEP));
-                        rectangle.setFillColor (correspondance_couleurs_sfml[Monde->current_piece->piece_color]);
-                        rectangle.setPosition(STEP*(i + x),STEP*(j+y));
-                        window.draw(rectangle);
-
-
-                        //std::cout << i <<", "<<j<< ", "<<Monde.current_piece->matrice[n*j+i] <<std::endl;
-                    }
-                }
-                        sf::Vertex line[] =
-                        {
-                            sf::Vertex(sf::Vector2f(STEP*(i + x),0)),
-                            sf::Vertex(sf::Vector2f(STEP*(i + x),STEP*HEIGHT))
-                        };
-
-                        window.draw(line, 2, sf::Lines);
-            }
-
-        }
-        window.display();
-//        std::cout<< n << "sorti " <<std::endl; exit (-1);
+      }
     }
 
+    // TODO: send state
+    network_server.send(state, 0);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+}
+
+void MainClient()
+{
+  Client network_client(WIDTH, HEIGHT);
+
+  std::thread writing_thread([&network_client]() { network_client.run(); });
+
+  while (!network_client.connected())
+  {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  //load game sounds
+  sf::Music startmusic;
+  startmusic.openFromFile("../sounds/music.wav");
+  startmusic.setVolume(16.f);
+  startmusic.setLoop(true);
+  startmusic.play();
+  //load rotation music
+  sf::SoundBuffer rot_buffer;
+  rot_buffer.loadFromFile("../sounds/block-rotate.wav");
+  sf::Sound rotate_sound;
+  rotate_sound.setBuffer(rot_buffer);
+  rotate_sound.setVolume(20.f);
+  //load move music
+  sf::SoundBuffer move_buffer;
+  move_buffer.loadFromFile("../sounds/selection.wav");
+  sf::Sound move_sound;
+  move_sound.setBuffer(move_buffer);
+  move_sound.setVolume(20.f);
+  //load fall music
+  sf::SoundBuffer fall_buffer;
+  fall_buffer.loadFromFile("../sounds/fall.wav");
+  sf::Sound fall_sound;
+  fall_sound.setBuffer(fall_buffer);
+  fall_sound.setVolume(20.f);
+
+  std::srand(std::time(nullptr));
+  //Game MaPartie(WIDTH, HEIGHT, STEP, 1);
+  sf::RenderWindow window(sf::VideoMode(WIDTH * STEP, STEP * HEIGHT), "Tetris");
+  window.setPosition(sf::Vector2i(0, 0));
+  window.setFramerateLimit(40);
+  std::list<enum commandes> commandes_attente;
+
+  //auto Monde = MaPartie.Jeux[0]; // un pointeur, donc
+  int i = 0;
+  while (window.isOpen())
+  {
+    enum commandes current = commandes::none;
+    enum commandes previous = pause_commande;
+    i++;
+    sf::Event event;
+    while (window.pollEvent(event))
+    {
+      if (event.type == sf::Event::Closed)
+      {
+        startmusic.stop();
+        window.close();
+      }
+    }
+    // Monde->executer_commandes();
+    // if (i % TIME_STEP == 0) {
+    //   MaPartie.continuer();
+    // }
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+    {
+      current = move_right;
+      move_sound.play();
+    }
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+    {
+      current = move_left;
+      move_sound.play();
+    }
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
+    {
+      current = move_down;
+      fall_sound.play();
+    }
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+    {
+      current = rotate_direct;
+      rotate_sound.play();
+    }
+    else if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+    {
+      current = rotate_undirect;
+      rotate_sound.play();
+    }
+    else
+    {
+      current = pause_commande;
+    }
+
+    if (current != previous)
+    {
+      std::cout << "sending current: " << current << std::endl;
+      network_client.send(current);
+    }
+    previous = current;
+    window.clear();
+
+    std::vector<int> board = network_client.receive();
+    std::cout << "vecteur a afficher :";
+    for (int compteur = 0; compteur < board.size(); compteur++)
+      std::cout << board[compteur] << "; ";
+    std::cout << std::endl;
+    int n;
+
+    for (int i = 0; i < WIDTH; i++)
+    {
+      for (int j = 0; j < HEIGHT; j++)
+      {
+        sf::RectangleShape rectangle(sf::Vector2f(STEP, STEP));
+        auto couleur = board[i + WIDTH * j];
+
+        if (couleur != Black)
+        {
+          rectangle.setFillColor(correspondance_couleurs_sfml[couleur]);
+          rectangle.setOutlineColor(sf::Color::White);
+          rectangle.setOutlineThickness(1);
+          rectangle.setPosition(STEP * j, STEP * i);
+          window.draw(rectangle);
+        }
+      }
+    }
+    // n = Monde->current_piece->taille_matrice;
+    // int x = Monde->current_piece->pos_premiere_case[0];
+    // int y = Monde->current_piece->pos_premiere_case[1];
+
+    // for (int i = 0; i < n; i++) {
+    //   for (int j = 0; j < n; j++) {
+    //     if (Monde->current_piece->matrice[n * j + i] == 1) {
+    //       sf::RectangleShape rectangle(sf::Vector2f(STEP, STEP));
+    //       rectangle.setFillColor(
+    //           correspondance_couleurs_sfml[Monde->current_piece->piece_color]);
+    //       rectangle.setPosition(STEP * (i + x), STEP * (j + y));
+    //       window.draw(rectangle);
+    //     }
+    //   }
+    //   sf::Vertex line[] = {
+    //       sf::Vertex(sf::Vector2f(STEP * (i + x), 0)),
+    //       sf::Vertex(sf::Vector2f(STEP * (i + x), STEP * HEIGHT))};
+
+    //   window.draw(line, 2, sf::Lines);
+    // }
+    window.display();
+  }
+}
+
+int main(int argc, char *argv[])
+{
+  std::cout << "Bienvenue dans Tetris" << std::endl;
+
+  char who;
+  std::cout << "Do you want to be a server (s) or a client (c) ? ";
+  std::cin >> who;
+
+  if (who == 's')
+  {
+    std::cout << "Creation d'un serveur" << std::endl;
+    std::string password = " ";
+    // ask for password to login as server
+    while (password != "tetris")
+    {
+      std::cout << "Enter password : ";
+      std::cin >> password;
+      if (password != "tetris")
+      {
+        std::cout << "Wrong password! Please try again.\n"
+                  << std::endl;
+      }
+    }
+
+    MainServeur();
     return 0;
+  }
+
+  MainClient();
+  return 0;
 }

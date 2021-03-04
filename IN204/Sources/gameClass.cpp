@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <ctime>
+#include <string>
 
 
 using namespace std;
@@ -17,7 +18,7 @@ int myints3[] ={0,1,0,1,1,1,0,0,0};
 int myints4[] ={0,0,1,1,1,1,0,0,0};
 int myints5[] ={1,0,0,1,1,1,0,0,0};
 int myints6[] ={1,1,0,0,1,1,0,0,0};
-int myints7[] ={0,1,1,1,1,0,0,0,0};// on parle bien (de la racine carrée) du nb de cases de la petite matrice qui contient la piece;
+int myints7[] ={0,1,1,1,1,0,0,0,0};// on parle bien (de la racine carrï¿½e) du nb de cases de la petite matrice qui contient la piece;
 
 std::vector<int> vect1 (myints1, myints1+ 16);
 std::vector<int> vect2 (myints2, myints2+ 4);
@@ -30,7 +31,7 @@ std::vector<int> vect7 (myints7, myints7+ 9);
 std::vector<std::vector <int>> correspondances_forme_matrice {vect1, vect2,vect3,vect4,vect5,vect6,vect7};
 
 int correspondances_forme_position[] = {-1,0,0,0,0,0,0}; // on ne met que le y
-char* correspondance_couleurs[] = {"Black", "Red", "Green", "Blue", "Yellow", "Magenta", "Cyan"};
+string correspondance_couleurs[] = {"Black", "Red", "Green", "Blue", "Yellow", "Magenta", "Cyan"};
 
 
 
@@ -44,9 +45,9 @@ Piece::Piece(enum type typeP,enum color colorP, int x_premiere_case, int y_premi
     piece_type = typeP;
 	piece_color = colorP;
 	pos_premiere_case = {x_premiere_case, y_premiere_case};
-	matrice = correspondances_forme_matrice[typeP]; // petite matrice 3*3, 2*2 ou 4*4 contenant la forme// 1 = occupée, 0= non occupée
+	matrice = correspondances_forme_matrice[typeP]; // petite matrice 3*3, 2*2 ou 4*4 contenant la forme// 1 = occupï¿½e, 0= non occupï¿½e
 	taille_matrice = int (sqrt (matrice.size ())); // taille de la matrice
-	rotation = 0; // appartient à |[0, 3]| la rotation réelle en sera un multiple: aide à repérer la forme dans le plan
+	rotation = 0; // appartient ï¿½ |[0, 3]| la rotation rï¿½elle en sera un multiple: aide ï¿½ repï¿½rer la forme dans le plan
     std::cout << "Piece created"<< std::endl;
 }
 
@@ -96,7 +97,7 @@ bool Piece::move(enum direction dir)
         {
             if ( (matrice_temp[len*j+i]==1) &&(monde->get_case((i+pos_premiere_case[0]),(j + pos_premiere_case[1]))!=Black  || i+pos_premiere_case[0] >= n || i+pos_premiere_case[0] <0 || j+pos_premiere_case[1] >= m))
             {
-                pos_premiere_case[0]-=X; pos_premiere_case[1]-=Y; // on retablit la position initiale si on n'a pas bougé
+                pos_premiere_case[0]-=X; pos_premiere_case[1]-=Y; // on retablit la position initiale si on n'a pas bougï¿½
                 if (dir == Down)
                 {
                     monde->change_piece ();
@@ -145,14 +146,14 @@ bool Piece::elementary_unrotate()
             //matrice_temp [taille_matrice*j+i] = matrice[taille_matrice*(taille_matrice-1-i) + j];
             matrice_temp [taille_matrice*i+j] = matrice[taille_matrice*(taille_matrice-1-j) + i];
             std::cout << "case " << i <<", " <<j<< "; "<<pos_premiere_case[0] +j<<"; " <<matrice_temp[i+taille_matrice*j]<< std::endl;
-            if (pos_premiere_case[0] +j< n && pos_premiere_case[0] +j>=0) // si la case appartient à la grande matrice
+            if (pos_premiere_case[0] +j< n && pos_premiere_case[0] +j>=0) // si la case appartient ï¿½ la grande matrice
             {
                     if (monde->get_matrix()[taille_matrice*(pos_premiere_case[0] +i)+(pos_premiere_case[1]+j)]!=Black&&matrice_temp[taille_matrice*i+j] == 1)
                 {
                     return false;
                 }
             }
-            else // si elle n'y appartient pas... il faut que la case de la petite matrice ne soit pas occupée
+            else // si elle n'y appartient pas... il faut que la case de la petite matrice ne soit pas occupï¿½e
             {
                 if (matrice_temp [taille_matrice*i+j]==1)
                 {
@@ -182,14 +183,14 @@ bool Piece::elementary_rotate()
             //matrice_temp[taille_matrice*(taille_matrice-1-j) + i] = matrice[taille_matrice*i+j] ;
             matrice_temp[taille_matrice*(taille_matrice-1-j) + i] = matrice[taille_matrice*i+j] ;
             std::cout << "case " << i <<", " <<j<< "; "<<pos_premiere_case[0] +j<< std::endl;
-            if (pos_premiere_case[0] +j< n && pos_premiere_case[0] +j>=0) // si la case appartient à la matrice
+            if (pos_premiere_case[0] +j< n && pos_premiere_case[0] +j>=0) // si la case appartient ï¿½ la matrice
             {
                 if (monde->get_matrix()[(pos_premiere_case[0] +i)+taille_matrice*(pos_premiere_case[1]+j)]!=Black&&matrice_temp[i+taille_matrice*j] == 1)
                 {
                     return false;
                 }
             }
-            else // si elle n'y appartient pas... il faut que la case de la petite matrice ne soit pas occupée
+            else // si elle n'y appartient pas... il faut que la case de la petite matrice ne soit pas occupï¿½e
             {
                 if (matrice_temp [i+taille_matrice*j]==1)
                 {
@@ -242,7 +243,7 @@ Board::Board (int pas, int hauteur, int largeur, enum type pieceT, int numero_jo
 Board::~Board()
 {
     delete MATRIX;
-    delete current_piece; //celle-ci a ete instanciée avec Board::nouvelle_piece ()
+    delete current_piece; //celle-ci a ete instanciï¿½e avec Board::nouvelle_piece ()
     std::cout << "Board deleted succesflully" << std::endl;
 }
 
@@ -290,13 +291,14 @@ void Board::continuer ()
 {
     int y_avant = current_piece->pos_premiere_case[1];
     enum type Tavant = current_piece->piece_type;
+    std::cout << "la piece essaie de bouger" << std::endl;
     bool est_tombee = current_piece->move (Down);
     //std::cout << current_piece->pos_premiere_case[0] <<"; " << current_piece->pos_premiere_case[1] << std::endl;
     if (est_tombee == false && y_avant == correspondances_forme_position[Tavant])
     {
         board_over = true;
         Partie->stop_game (nr_joueur);
-        std::cout<< "joueur " <<  nr_joueur << " a fini prmier ! : " << current_piece->pos_premiere_case[0] <<std::endl;
+        std::cout<< "joueur " <<  nr_joueur << " a fini premier ! : " << current_piece->pos_premiere_case[0] <<std::endl;
     }
     //cout<< "Etape"<<  std::endl;
 }
@@ -386,7 +388,7 @@ Game::Game (int width, int height, int step, int nb_joueurs)
 //        }
 
     }
-    pieces_suivantes.pop_front (); // on a deja donné cette piece lors de l'initialisation; on la retire et on la remplace par une autre;
+    pieces_suivantes.pop_front (); // on a deja donnï¿½ cette piece lors de l'initialisation; on la retire et on la remplace par une autre;
     nouvelle_piece();
     broadcast_piece(); // chaque Board en a besoin d'au moins
 }

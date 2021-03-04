@@ -16,7 +16,7 @@ enum color {Black, Red, Green, Blue, Yellow, Magenta, Cyan}; // Black est une ca
 
 enum type {I, O, T, L, J, Z, S};
 enum direction {Left, Right, Up, Down};
-enum commandes {move_left, move_right, rotate_direct, rotate_undirect, pause_commande, move_down}; // commandes possibles recues par le Board// pause n'est pas vraiment recue, mais elle est enregistree. il faut deux commandes d'un même type suivies d'une pause pour les envoyer toutes les deux
+enum commandes {random_noise, move_left, move_right, rotate_direct, rotate_undirect, pause_commande, move_down, ping, byebye, none}; // commandes possibles recues par le Board// pause n'est pas vraiment recue, mais elle est enregistree. il faut deux commandes d'un même type suivies d'une pause pour les envoyer toutes les deux
 
 class Piece ;
 class Game ;

@@ -1,6 +1,7 @@
 #ifndef VARIABLES_HPP
 #define VARIABLES_HPP
 
+#include <vector>
 
 enum color {Black, Red, Green, Blue, Yellow, Magenta, Cyan}; // Black est une case vide
 
@@ -14,7 +15,7 @@ std::vector<int> vect3{0,1,0,1,1,1,0,0,0};
 std::vector<int> vect4{0,0,1,1,1,1,0,0,0};
 std::vector<int> vect5{1,0,0,1,1,1,0,0,0};
 std::vector<int> vect6{1,1,0,0,1,1,0,0,0};
-std::vector<int> vect7{0,1,1,1,1,0,0,0,0};// on parle bien (de la racine carrée) du nb de cases de la petite matrice qui contient la piece;
+std::vector<int> vect7{0,1,1,1,1,0,0,0,0};// on parle bien (de la racine carrï¿½e) du nb de cases de la petite matrice qui contient la piece;
 
  std::vector <int> correspondances_forme_matrice [] = {vect1, vect2,vect3,vect4,vect5,vect6,vect7};
 
