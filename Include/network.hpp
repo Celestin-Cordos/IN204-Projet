@@ -10,7 +10,8 @@
 
 using socket_t = std::shared_ptr<sf::TcpSocket>;
 
-struct Connexion {
+struct Connexion
+{
   int _width;
   int _height;
   std::size_t id;
@@ -23,7 +24,8 @@ struct Connexion {
   Connexion(std::size_t id, std::string const &name, socket_t socket, int width, int height);
 };
 
-class Server {
+class Server
+{
 public:
   using client_t = std::pair<std::string, socket_t>;
   int _width;
@@ -34,6 +36,7 @@ public:
   std::atomic_bool _running;
 
   std::mutex _mtx;
+  int _nb_clients;
 
 public:
   //Server();
@@ -43,16 +46,13 @@ public:
 
   std::vector<commandes> receive();
 
-  void send (std::vector<int> tableau, int id_client);
-  // void send(std::string state, std::size_t id) {
-  //   std::lock_guard<std::mutex> lock(_mtx);
-  //   _clients[id].state = state;
-  // }
+  void send(std::vector<int> tableau, int id_client);
 
   std::size_t numberOfConnection() const { return _clients.size(); }
 };
 
-class Client {
+class Client
+{
 public:
   int _height;
   int _width;

@@ -11,10 +11,12 @@
 const unsigned short PORT = 8080;
 sf::IpAddress IP = sf::IpAddress::getLocalAddress();
 
-vector<int> strToVect(string s) {
+vector<int> strToVect(string s)
+{
   vector<int> vect;
   std::stringstream oss;
-  for (char c : s) {
+  for (char c : s)
+  {
     if (c == '0')
       vect.push_back(0);
     else if (c == '1')
@@ -23,56 +25,70 @@ vector<int> strToVect(string s) {
   return vect;
 }
 
-string vectToStr(vector<int> vec) {
+string vectToStr(vector<int> vec)
+{
   std::ostringstream oss;
 
-  if (!vec.empty()) {
+  if (!vec.empty())
+  {
     std::copy(vec.begin(), vec.end(), std::ostream_iterator<int>(oss, ""));
   }
 
   return oss.str();
 }
 
-Server::Server(int width, int height, int nb_joueurs) {
+Server::Server(int width, int height, int nb_joueurs)
+{
   _width = width;
   _height = height;
   _listener.listen(PORT, IP);
   _running = false;
+  _nb_clients = nb_joueurs;
 }
 
-std::vector<commandes> Server::receive() {
+std::vector<commandes> Server::receive()
+{
   std::vector<commandes> result(_clients.size(), ping);
   // std::lock_guard<std::mutex> lock(_mtx);
-  for (auto &client : _clients) {
+  for (auto &client : _clients)
+  {
     result[client.id] = client.input;
     client.input = none;
   }
   return result;
 }
 
-void Server::send(std::vector<int> tableau, int id_client) {
+void Server::send(std::vector<int> tableau, int id_client)
+{
   // std::lock_guard_server<std::mutex> lock(buffer_envoi_mutex);
   _clients[id_client].buffer_envoi = tableau;
 }
 
-void Server::run() {
+void Server::run()
+{
   _running = true;
 
-  int total_nb = 1;
-  while (_clients.size() < total_nb) {
-    std::cout << "En attente de client" << std::endl;
+  int total_nb = _nb_clients;
+  std::cout << "waiting for " << total_nb << " client(s)" << std::endl;
+  while (_clients.size() < total_nb)
+  {
+    std::cout << "Waiting for client" << std::endl;
 
     auto socket = std::make_shared<sf::TcpSocket>();
     auto status = _listener.accept(*socket);
-    if (status != sf::Socket::Done) {
+    if (status != sf::Socket::Done)
+    {
       continue;
     }
 
     sf::Packet id_packet;
     std::string id;
-    if (socket->receive(id_packet) == sf::Socket::Done) {
+    if (socket->receive(id_packet) == sf::Socket::Done)
+    {
       id_packet >> id;
-    } else {
+    }
+    else
+    {
       continue;
     }
     std::cout << "Player " << id << " is connected (" << _clients.size() << "/"
@@ -86,24 +102,27 @@ void Server::run() {
 
   // Start a thread by client to listen
   std::vector<std::thread> threads;
-  for (auto &client : _clients) {
+  for (auto &client : _clients)
+  {
     threads.emplace_back([this, &client]() {
-      while (_running) {
+      while (_running)
+      {
         int input;
         { // Receive
           sf::Packet packet;
           auto status = client.socket->receive(packet);
-          std::cout << "packet : " << packet << std::endl;
-          if (status == sf::Socket::Done) {
+          if (status == sf::Socket::Done)
+          {
             packet >> input;
-          } else {
+          }
+          else
+          {
             std::cout << "Exiting" << std::endl;
             return;
           }
-          std::cout << "Received from client " << client.id << ": " << input
-                    << std::endl;
 
-          if (input == commandes::byebye) {
+          if (input == commandes::byebye)
+          {
             std::cout << "Client " << client.id << " disconnected" << std::endl;
             return;
           }
@@ -112,17 +131,15 @@ void Server::run() {
         sf::Packet board;
         {
           std::string message = vectToStr(client.buffer_envoi);
-          std::cout << "Sending: " << message << std::endl;
-          // std::lock_guard<std::mutex> lock(_mtx);
           if (input != commandes::ping)
             client.input = static_cast<commandes>(input);
           board << message;
         }
 
         { // Reply
-          std::cout << "Sending update to client " << client.id << std::endl;
           auto status = client.socket->send(board);
-          if (status != sf::Socket::Done) {
+          if (status != sf::Socket::Done)
+          {
             std::cout << "Disconnected from client" << std::endl;
             return;
           }
@@ -131,13 +148,15 @@ void Server::run() {
     });
   }
 
-  for (auto &thread : threads) {
+  for (auto &thread : threads)
+  {
     thread.join();
   }
   std::cout << "Communication ended" << std::endl;
 }
 
-Client::Client(int width, int height) {
+Client::Client(int width, int height)
+{
   _socket.connect(IP, PORT);
   _running = false;
   _is_connected = false;
@@ -148,58 +167,68 @@ Client::Client(int width, int height) {
     buffer_reception.push_back(0);
 }
 
-void Client::run() {
+void Client::run()
+{
   _running = true;
   std::string id;
   std::cout << "Enter online id: ";
   std::cin >> id;
-  if (_socket.connect(IP, PORT) == sf::Socket::Done) {
+  if (_socket.connect(IP, PORT) == sf::Socket::Done)
+  {
     sf::Packet id_packet;
     id_packet << id;
     _socket.send(id_packet);
     _is_connected = true;
     std::cout << "Connection success" << std::endl;
-  } else {
+  }
+  else
+  {
     std::cout << "Connection failure" << std::endl;
   }
 
   // listen to server in a separate thread
   std::thread listening_thread([this]() {
-    while (_running) {
-      std::cout << "Listening to server" << std::endl;
+    while (_running)
+    {
       sf::Packet id_packet;
-      if (_socket.receive(id_packet) == sf::Socket::Done) {
+      if (_socket.receive(id_packet) == sf::Socket::Done)
+      {
         id_packet >> _input;
-      } else {
+      }
+      else
+      {
         std::cout << "Disconnected from server" << std::endl;
         _running = false;
         break;
       }
-      std::cout << "received from server: " << _input << std::endl;
       buffer_reception = strToVect(_input);
     }
   });
 
   // Write to server in a separate thread on regular basis
   std::thread writing_thread([this]() {
-    while (_running) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    while (_running)
+    {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
       // std::lock_guard<std::mutex> lock(_buffer_mtx);
-      if (_buffer.getDataSize() > 0) {
-        std::cout << "sending update to server: " << _buffer << std::endl;
+      if (_buffer.getDataSize() > 0)
+      {
         auto status = _socket.send(_buffer);
-        if (status != sf::Socket::Done) {
+        if (status != sf::Socket::Done)
+        {
           std::cout << "Disconnected from server" << std::endl;
           _running = false;
           return;
         }
         _buffer.clear();
-      } else {
-        std::cout << "sending ping to server" << std::endl;
+      }
+      else
+      {
         sf::Packet ping;
         ping << commandes::ping;
         auto status = _socket.send(ping);
-        if (status != sf::Socket::Done) {
+        if (status != sf::Socket::Done)
+        {
           return;
         }
       }
@@ -211,21 +240,22 @@ void Client::run() {
   writing_thread.join();
 }
 
-void Client::send(commandes cmd) {
+void Client::send(commandes cmd)
+{
   std::lock_guard<std::mutex> lock(_buffer_mtx);
   _buffer.clear();
   _buffer << cmd;
-  std::cout << "buffer client : " << _buffer << " et commande cient " << cmd
-            << std::endl;
 }
 
-std::vector<int> Client::receive() {
+std::vector<int> Client::receive()
+{
   // std::lock_guard<std::mutex> lock(_input_mtx);
   return buffer_reception;
 }
 
 Connexion::Connexion(std::size_t id, std::string const &name, socket_t socket,
-                     int width, int height) {
+                     int width, int height)
+{
   _width = width;
   _height = height;
   this->id = id;
