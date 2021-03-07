@@ -3,5 +3,7 @@ Anthony AOUN & Celestin CORDOS
 
 ## LINUX
 To compile :
- - ./run.sh   (before running do : chmod +x run.sh)
+ - chmod +x run.sh
+ - ./run.sh
+Or,
  - g++ main.cpp gameClass.cpp network.cpp  -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lsfml-network -lpthread -o main.exe
