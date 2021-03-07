@@ -2,7 +2,7 @@
 Anthony AOUN & Celestin CORDOS
 
 ## LINUX
-To compile :
+To compile and run :
  - chmod +x run.sh
  - ./run.sh
 
