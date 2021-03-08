@@ -6,3 +6,5 @@ To compile and run :
  - chmod +x run.sh
  - ./run.sh
 
+NB : the password to access as server is "tetris"
+
